@@ -13,6 +13,7 @@ Friends open it on their phones, pick a game, and each get their own random card
 - `data/prizes.json`: prize amounts (first bingo, each extra bingo, blackout) paid as scratch-offs. A game can override it with `"prizes"`
 - `games/index.json`: the list of games shown on the home page
 - `games/<slug>.json`: one file per game, with that matchup's own squares
+- `vendor/qrcode.js`: QR code generator (qrcode-generator 1.4.4, MIT) for the share pop-up
 - `scripts/validate.js`: run `node scripts/validate.js` before every commit
 
 ## Adding a game (the usual request)

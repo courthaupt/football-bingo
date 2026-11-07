@@ -6,12 +6,21 @@
 <meta name="theme-color" content="#1f4d2b">
 <title>Football Bingo</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>">
-<link rel="stylesheet" href="style.css?v=202611070344">
+<link rel="stylesheet" href="style.css?v=202611070349">
 </head>
 <body>
 <main id="app">
   <p class="loading">Loading…</p>
 </main>
+<div id="qr" class="banner qr" hidden>
+  <div class="banner-inner qr-inner">
+    <div class="qr-title">Scan to play</div>
+    <div class="qr-sub"></div>
+    <div class="qr-code"></div>
+    <div class="qr-url"></div>
+    <button id="qr-close" type="button">Done</button>
+  </div>
+</div>
 <div id="banner" class="banner" hidden>
   <div class="banner-inner">
     <div class="banner-title">BINGO! 🎉</div>
@@ -20,6 +29,7 @@
     <button id="banner-close" type="button">Keep playing</button>
   </div>
 </div>
-<script src="app.js?v=202611070344"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="app.js?v=202611070349"></script>
 </body>
 </html>

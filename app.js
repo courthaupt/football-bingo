@@ -273,13 +273,7 @@
     card.append(el("div", { class: "letters" }, ..."BINGO".split("").map((l) => el("span", null, l))), grid,
       el("div", { class: "card-foot" }, winCount, el("span", null, game.title)));
 
-    const shareBtn = el("button", { type: "button", onclick: async () => {
-      const url = location.href;
-      try {
-        if (navigator.share) await navigator.share({ title: game.title + " Bingo", url });
-        else { await navigator.clipboard.writeText(url); shareBtn.textContent = "Link copied"; }
-      } catch (e) { /* cancelled */ }
-    } }, "Share link");
+    const shareBtn = el("button", { type: "button", onclick: () => showQR(game) }, "📱 Share QR code");
 
     app.replaceChildren(
       header,
@@ -305,6 +299,26 @@
     refresh(false);
     keepAwake();
   }
+
+  // Share: pop up a QR code of this game's link for friends to scan.
+  function showQR(game) {
+    const qrBox = document.getElementById("qr");
+    const slug = new URLSearchParams(location.search).get("game");
+    const url = location.origin + location.pathname + (slug ? "?game=" + encodeURIComponent(slug) : "");
+    qrBox.querySelector(".qr-sub").textContent = game.title;
+    qrBox.querySelector(".qr-url").textContent = url.replace(/^https?:\/\//, "");
+    const holder = qrBox.querySelector(".qr-code");
+    try {
+      const qr = qrcode(0, "M");
+      qr.addData(url); qr.make();
+      holder.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+    } catch (e) {
+      holder.textContent = "Couldn't make a QR code. Share the link below instead.";
+    }
+    qrBox.hidden = false;
+  }
+  document.getElementById("qr-close").addEventListener("click", () => { document.getElementById("qr").hidden = true; });
+  document.getElementById("qr").addEventListener("click", (e) => { if (e.target.id === "qr") e.currentTarget.hidden = true; });
 
   // Keep the screen on while the card is open (supported browsers only).
   let lock = null;
