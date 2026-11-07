@@ -60,12 +60,28 @@
   }
   const money = (n) => "$" + n;
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-  function owed(wins, prizes) {
-    let total = 0;
-    if (prizes.bingo && wins.some((w) => w.kind === "line" || w.kind === "corners")) total += prizes.bingo.amount;
-    if (prizes.blackout && wins.some((w) => w.kind === "blackout")) total += prizes.blackout.amount;
-    return total;
+  // Each prize is paid as one ticket of that amount: first bingo, each extra bingo, blackout bonus.
+  // A "bingo" is any completed line or four corners.
+  function tally(wins, prizes) {
+    const bingos = wins.filter((w) => w.kind === "line" || w.kind === "corners").length;
+    const t = {};
+    const add = (amt, n) => { if (amt && n > 0) t[amt] = (t[amt] || 0) + n; };
+    if (bingos) { add(prizes.firstBingo, 1); add(prizes.extraBingo, bingos - 1); }
+    if (wins.some((w) => w.kind === "blackout")) add(prizes.blackout, 1);
+    return t;
   }
+  const sum = (t) => Object.entries(t).reduce((a, [amt, n]) => a + amt * n, 0);
+  const NUM = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  function ticketsText(t, prizes) {
+    const kind = prizes.payWith || "ticket";
+    return Object.entries(t).sort((a, b) => b[0] - a[0])
+      .map(([amt, n]) => (NUM[n] || n) + " " + money(amt) + " " + kind + (n > 1 ? "s" : "")).join(" + ");
+  }
+  const diff = (after, before) => {
+    const t = {};
+    for (const [amt, n] of Object.entries(after)) if (n - (before[amt] || 0) > 0) t[amt] = n - (before[amt] || 0);
+    return t;
+  };
 
   // ---------- rules ----------
   async function showRules(slug) {
@@ -73,7 +89,7 @@
     let game = null;
     if (slug && /^[a-z0-9-]+$/.test(slug) && slug !== "generic") { try { game = await getJSON("games/" + slug + ".json"); } catch (e) { /* default prizes */ } }
     const prizes = await getPrizes(game);
-    const b = prizes.bingo, x = prizes.blackout;
+    const f = prizes.firstBingo, e = prizes.extraBingo, x = prizes.blackout, kind = prizes.payWith || "ticket";
     const li = (...kids) => el("li", null, ...kids);
     const strong = (t) => el("strong", null, t);
     app.replaceChildren(
@@ -93,10 +109,10 @@
           li(strong("Four corners:"), " all four corner squares. This also counts as a bingo."),
           li(strong("Blackout:"), " every square on your card.")),
         el("h2", null, "Prizes"),
-        b || x ? el("ul", { class: "prizes" },
-          b ? li(el("span", { class: "amt" }, money(b.amount)), el("span", null, strong("Your card's first bingo"), el("br"), cap(b.paidAs) + ". One bingo prize per card. More lines are just for bragging rights.")) : null,
-          x ? li(el("span", { class: "amt" }, "+" + money(x.amount)), el("span", null, strong("Blackout bonus"), el("br"), cap(x.paidAs) + ". It's a long shot!")) : null,
-          b && x ? li(el("span", { class: "amt" }, money(b.amount + x.amount)), el("span", null, strong("Most one card can win"))) : null)
+        f || x ? el("ul", { class: "prizes" },
+          f ? li(el("span", { class: "amt" }, money(f)), el("span", null, strong("Your card's first bingo"), el("br"), "One " + money(f) + " " + kind + ".")) : null,
+          e ? li(el("span", { class: "amt" }, "+" + money(e)), el("span", null, strong("Every bingo after that"), el("br"), "One " + money(e) + " " + kind + " for each new line or four corners.")) : null,
+          x ? li(el("span", { class: "amt" }, "+" + money(x)), el("span", null, strong("Blackout bonus"), el("br"), "One " + money(x) + " " + kind + ". It's a long shot!")) : null)
           : el("p", null, "No prizes for this one. Just bragging rights."),
         el("h2", null, "Claiming"),
         el("ul", null,
@@ -202,29 +218,26 @@
       const total = wins.length;
       card.classList.toggle("bingo", total > 0);
       card.classList.toggle("blackout", wins.some((w) => w.kind === "blackout"));
-      const won = owed(wins, prizes);
-      winCount.textContent = total ? (won ? "💵 " + money(won) + " won · " : "🏆 ") + total + (total === 1 ? " bingo" : " bingos") : "";
+      const won = sum(tally(wins, prizes));
+      const bingos = wins.filter((w) => w.kind !== "blackout").length;
+      winCount.textContent = total ? (won ? "💵 " + money(won) + " won · " : "🏆 ") + bingos + (bingos === 1 ? " bingo" : " bingos") + (bingos < total ? " + blackout" : "") : "";
       // Pop up for every new win this tap created, with what it pays.
       const fresh = wins.filter((w) => !prevIds.has(w.id));
-      const before = owed(wins.filter((w) => prevIds.has(w.id)), prizes);
-      if (fromTap && fresh.length) celebrate(fresh, won - before, won);
+      const prev = wins.filter((w) => prevIds.has(w.id));
+      if (fromTap && fresh.length) celebrate(fresh, diff(tally(wins, prizes), tally(prev, prizes)), won);
       prevIds = new Set(wins.map((w) => w.id));
     }
 
-    function celebrate(fresh, newMoney, totalMoney) {
+    function celebrate(fresh, newTickets, totalMoney) {
       const kinds = fresh.map((w) => w.kind);
       const lines = kinds.filter((k) => k === "line").length;
+      const newMoney = sum(newTickets);
       let title, sub;
       if (kinds.includes("blackout")) title = "BLACKOUT! 🏆";
       else title = (kinds.includes("corners") && !lines ? "FOUR CORNERS" : (MULTI[fresh.length] ?? fresh.length + "X ") + "BINGO") + "! 🎉";
-      // A blackout always comes after a bingo, so a blackout tap only ever adds the blackout bonus.
-      const prize = kinds.includes("blackout") ? prizes.blackout : prizes.bingo;
-      if (newMoney > 0 && prize) {
-        sub = "That's " + prize.paidAs + ". Show your card to the host to collect." +
+      if (newMoney > 0) {
+        sub = "That's " + ticketsText(newTickets, prizes) + ". Show your card to the host to collect." +
           (totalMoney > newMoney ? " This card has won " + money(totalMoney) + " in all." : "");
-      } else if (totalMoney > 0) {
-        sub = "This card already won its bingo prize (" + money(totalMoney) + "), so this one is for bragging rights." +
-          (prizes.blackout ? " Keep going for the +" + money(prizes.blackout.amount) + " blackout!" : "");
       } else {
         sub = "Nice! Show your card to the room.";
       }
@@ -273,7 +286,7 @@
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
       card,
       el("p", { class: "rules" },
-        prizes.bingo ? "First bingo pays " + money(prizes.bingo.amount) + " per card" + (prizes.blackout ? " · Blackout +" + money(prizes.blackout.amount) : "") + " · "
+        prizes.firstBingo ? "First bingo " + money(prizes.firstBingo) + (prizes.extraBingo ? " · Each extra +" + money(prizes.extraBingo) : "") + (prizes.blackout ? " · Blackout +" + money(prizes.blackout) : "") + " · "
                      : "Any line, four corners or blackout · ",
         el("a", { href: rulesHref }, "Rules")),
       el("div", { class: "actions" },

@@ -1,4 +1,6 @@
 {
-  "bingo": { "amount": 3, "paidAs": "one $2 + one $1 scratch-off" },
-  "blackout": { "amount": 5, "paidAs": "one $5 scratch-off" }
+  "payWith": "scratch-off",
+  "firstBingo": 2,
+  "extraBingo": 1,
+  "blackout": 5
 }
