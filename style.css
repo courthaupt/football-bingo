@@ -48,6 +48,8 @@ h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spa
         padding: 2px; font-size: clamp(.6rem, 2.7vw, .82rem); line-height: 1.12;
         overflow-wrap: break-word; hyphens: auto; cursor: pointer; user-select: none;
         background: none; color: inherit; font-family: inherit; }
+.cell.long { font-size: clamp(.56rem, 2.45vw, .78rem); }
+.cell.xlong { font-size: clamp(.5rem, 2.2vw, .74rem); letter-spacing: -.01em; }
 .cell.marked { background: var(--mark); color: var(--mark-ink); font-weight: 700; border-color: var(--mark); }
 .cell.win { outline: 3px solid var(--accent); outline-offset: -3px; }
 .cell.free { background: var(--accent); color: #fff; font-weight: 800; cursor: default; }

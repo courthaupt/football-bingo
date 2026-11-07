@@ -9,6 +9,7 @@ Friends open it on their phones, pick a game, and each get their own random card
 ## Files
 - `index.html`, `style.css`, `app.js`: the app
 - `data/generic.json`: general NFL squares used to fill out every card
+- `data/generic-college.json`: general college squares (a game opts in with `"generic": "college"`)
 - `games/index.json`: the list of games shown on the home page
 - `games/<slug>.json`: one file per game, with that matchup's own squares
 - `scripts/validate.js`: run `node scripts/validate.js` before every commit
@@ -33,6 +34,8 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
    }
    ```
    Use the team's primary color, a dark one that's readable with white text on it.
+   Optional fields: `"generic": "college"` for college games (uses `data/generic-college.json`),
+   and `"specificPerCard": 15` to change how many game squares each card gets (default 14).
 4. **Squares**: write 28–36 game-specific ones. Each card draws 14 of them plus 10 generic ones,
    so friends' cards differ. Rules:
    - At most 32 characters. Shorter is better, since cells are small on phones. Use last names.
@@ -42,8 +45,10 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
      ("Kickoff happens") and long shots ("QB catches a TD").
    - It must be clear to everyone watching when a square happens.
    - No squares about a specific player getting hurt, and nothing mean.
-   - Don't repeat a square from `data/generic.json`.
-5. Add `{ "slug", "title", "date", "kickoff" }` to `games/index.json`.
+   - Don't repeat a square from the generic list the game uses.
+5. Add `{ "slug", "title", "date", "kickoff" }` to `games/index.json`. If the user wants the site
+   to be just this game, add `"featured": true` (and remove it from any other game). The home
+   page then opens that game directly, and `?all` still shows the full list.
 6. Run `node scripts/validate.js`, commit, and push to `main`.
 7. Give the user the share link: `https://courthaupt.github.io/football-bingo/?game=<slug>`
    and a few sample squares.

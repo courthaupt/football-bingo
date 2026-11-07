@@ -24,6 +24,8 @@ function checkSquares(where, list, min) {
 
 const generic = read("data/generic.json");
 if (generic) checkSquares("data/generic.json", generic, 24);
+const college = read("data/generic-college.json");
+if (college) checkSquares("data/generic-college.json", college, 24);
 
 const index = read("games/index.json") || [];
 const slugs = new Set();
@@ -45,6 +47,9 @@ for (const g of index) {
     else if (t.color && !/^#[0-9a-fA-F]{6}$/.test(t.color)) fail(file + ": " + side + ".color must be #rrggbb");
   }
   checkSquares(file, game.squares, 20);
+  if (game.generic && !["nfl", "college"].includes(game.generic)) fail(file + ': generic must be "nfl" or "college"');
+  const pool = game.generic === "college" ? college : generic;
+  for (const s of game.squares || []) if ((pool || []).some((p) => p.toLowerCase() === String(s).toLowerCase())) fail(file + ": repeats a generic square: " + s);
 }
 for (const f of fs.readdirSync(path.join(root, "games"))) {
   if (f !== "index.json" && f.endsWith(".json") && !slugs.has(f.replace(/\.json$/, ""))) fail("games/" + f + " is not listed in games/index.json");

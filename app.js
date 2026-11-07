@@ -93,10 +93,9 @@
 
   async function showGame(slug) {
     if (slug !== "generic" && !/^[a-z0-9-]+$/.test(slug)) throw new Error("Unknown game");
-    const [game, generic] = await Promise.all([
-      slug === "generic" ? Promise.resolve({ title: "Any game", squares: [] }) : getJSON("games/" + slug + ".json"),
-      getJSON("data/generic.json")
-    ]);
+    const game = slug === "generic" ? { title: "Any game", squares: [] } : await getJSON("games/" + slug + ".json");
+    const genericFile = game.generic === "college" ? "data/generic-college.json" : "data/generic.json";
+    const generic = await getJSON(genericFile);
     const key = "fbbingo:" + slug;
     let state = store.get(key);
     if (!state || !Array.isArray(state.squares) || state.squares.length !== PER_CARD) {
@@ -152,11 +151,14 @@
         cell = el("div", { class: "cell free" }, "FREE 🏈");
       } else {
         const idx = i;
-        cell = el("button", { class: "cell", type: "button", onclick: () => {
+        const text = state.squares[sq++];
+        const longest = Math.max(...text.split(/\s+/).map((w) => w.length));
+        const fit = longest >= 10 ? " xlong" : longest >= 8 || text.length > 22 ? " long" : "";
+        cell = el("button", { class: "cell" + fit, type: "button", onclick: () => {
           const at = state.marked.indexOf(idx);
           if (at >= 0) state.marked.splice(at, 1); else state.marked.push(idx);
           save(); refresh(true);
-        } }, state.squares[sq++]);
+        } }, text);
       }
       cells.push(cell);
       grid.append(cell);
@@ -187,7 +189,7 @@
           state.marked = []; save(); refresh(false);
         } }, "Clear marks"),
         shareBtn,
-        el("a", { class: "btn", href: "./" }, "All games"))
+        el("a", { class: "btn", href: "?all" }, "All games"))
     );
     refresh(false);
     keepAwake();
@@ -202,9 +204,23 @@
 
   document.getElementById("banner-close").addEventListener("click", () => { banner.hidden = true; });
 
-  const slug = new URLSearchParams(location.search).get("game");
-  (slug ? showGame(slug) : showList()).catch((e) => {
-    app.replaceChildren(el("p", { class: "error" }, "Couldn't load that game. "), el("p", { style: "text-align:center" }, el("a", { href: "./" }, "See all games")));
+  const params = new URLSearchParams(location.search);
+  async function start() {
+    const slug = params.get("game");
+    if (slug) return showGame(slug);
+    if (!params.has("all")) {
+      let games = [];
+      try { games = await getJSON("games/index.json"); } catch (e) { /* fall through */ }
+      const featured = games.find((g) => g.featured);
+      if (featured) {
+        history.replaceState(null, "", "?game=" + encodeURIComponent(featured.slug));
+        return showGame(featured.slug);
+      }
+    }
+    return showList();
+  }
+  start().catch((e) => {
+    app.replaceChildren(el("p", { class: "error" }, "Couldn't load that game. "), el("p", { style: "text-align:center" }, el("a", { href: "?all" }, "See all games")));
     console.error(e);
   });
 })();
