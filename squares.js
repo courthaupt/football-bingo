@@ -10,7 +10,7 @@ window.SQUARE_SETS = {
     "QB scramble 10+ yds", "Pass play 40+ yds", "Run play 20+ yds", "Touchback",
     "Player injured / cart", "Timeout called", "Two-minute warning", "Lead change",
     "Pick-six", "Celebration penalty", "Ref mic malfunction", "Camera shows the owner",
-    "Commentator says 'momentum'", "Replay review", "Hail Mary attempt", "Overtime",
+    "Announcer says 'momentum'", "Replay review", "Hail Mary attempt", "Overtime",
     "Shutout half", "Gatorade bath", "Stat about a rookie", "Mascot on screen",
     "Fan catches a ball in stands", "Kneel-down to end half", "Rain or snow on field",
     "Flea flicker or trick play", "One-handed catch", "Throw-away out of bounds"
@@ -24,7 +24,7 @@ window.SQUARE_SETS = {
     "Manager booked", "Hat trick", "Brace", "Clean sheet", "Comeback win",
     "Nutmeg", "Dive / simulation", "Assist from a defender", "Goal in first 5 minutes",
     "Penalty missed", "Throw-in to the box", "Handball shout", "Captain argues with ref",
-    "Commentator says 'class'", "Fans sing on broadcast", "Crossbar challenge-worthy miss",
-    "Tactical foul", "Counterattack goal", "Shot blocked on the line", "Extra time announced 5+ min"
+    "Pundit says 'class'", "Fans sing on broadcast", "Crossbar challenge-worthy miss",
+    "Tactical foul", "Goal on the break", "Shot blocked on the line", "Extra time announced 5+ min"
   ]
 };
