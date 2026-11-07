@@ -51,6 +51,64 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
+  // ---------- prizes ----------
+  // Site-wide prizes live in data/prizes.json; a game file can override them with "prizes".
+  async function getPrizes(game) {
+    let base = {};
+    try { base = await getJSON("data/prizes.json"); } catch (e) { /* no prizes */ }
+    return Object.assign({}, base, (game && game.prizes) || {});
+  }
+  const money = (n) => "$" + n;
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  function owed(wins, prizes) {
+    let total = 0;
+    if (prizes.bingo && wins.some((w) => w.kind === "line" || w.kind === "corners")) total += prizes.bingo.amount;
+    if (prizes.blackout && wins.some((w) => w.kind === "blackout")) total += prizes.blackout.amount;
+    return total;
+  }
+
+  // ---------- rules ----------
+  async function showRules(slug) {
+    document.title = "Rules & prizes · Football Bingo";
+    let game = null;
+    if (slug && /^[a-z0-9-]+$/.test(slug) && slug !== "generic") { try { game = await getJSON("games/" + slug + ".json"); } catch (e) { /* default prizes */ } }
+    const prizes = await getPrizes(game);
+    const b = prizes.bingo, x = prizes.blackout;
+    const li = (...kids) => el("li", null, ...kids);
+    const strong = (t) => el("strong", null, t);
+    app.replaceChildren(
+      el("h1", null, "📜 Rules & prizes"),
+      game ? el("p", { class: "muted" }, game.title + (game.kickoff ? " · " + game.kickoff : "")) : null,
+      el("section", { class: "rules-page" },
+        el("h2", null, "How to play"),
+        el("ul", null,
+          li("Everyone gets their own random card. ", strong("One card per person.")),
+          li("Don't tap ", strong("New card"), " after kickoff."),
+          li("Tap a square when it happens in the game or on the broadcast. That includes halftime and commercials."),
+          li("Only mark what you actually see or hear. The free space in the middle counts for everyone."),
+          li("Squares count from kickoff to the final whistle.")),
+        el("h2", null, "How to win"),
+        el("ul", null,
+          li(strong("Bingo:"), " any row, column or diagonal of 5. The free space counts."),
+          li(strong("Four corners:"), " all four corner squares. This also counts as a bingo."),
+          li(strong("Blackout:"), " every square on your card.")),
+        el("h2", null, "Prizes"),
+        b || x ? el("ul", { class: "prizes" },
+          b ? li(el("span", { class: "amt" }, money(b.amount)), el("span", null, strong("Your card's first bingo"), el("br"), cap(b.paidAs) + ". One bingo prize per card. More lines are just for bragging rights.")) : null,
+          x ? li(el("span", { class: "amt" }, "+" + money(x.amount)), el("span", null, strong("Blackout bonus"), el("br"), cap(x.paidAs) + ". It's a long shot!")) : null,
+          b && x ? li(el("span", { class: "amt" }, money(b.amount + x.amount)), el("span", null, strong("Most one card can win"))) : null)
+          : el("p", null, "No prizes for this one. Just bragging rights."),
+        el("h2", null, "Claiming"),
+        el("ul", null,
+          li("When the pop-up shows your prize, show your card to the host."),
+          li("The host has the final say on any disputed square."))),
+      el("div", { class: "actions" },
+        slug ? el("a", { class: "btn primary", href: "?game=" + encodeURIComponent(slug) }, "Back to my card") : null,
+        el("a", { class: "btn", href: "?all" }, "All games"))
+    );
+    window.scrollTo(0, 0);
+  }
+
   // ---------- game list ----------
   async function showList() {
     document.title = "Football Bingo";
@@ -68,6 +126,7 @@
       el("ul", { class: "games" }, ...upcoming.map(item),
         el("li", null, el("a", { href: "?game=generic" },
           el("div", { class: "title" }, "Any game"), el("div", { class: "when" }, "General NFL squares only")))),
+      el("p", null, el("a", { href: "?view=rules" }, "📜 Rules & prizes")),
       past.length ? el("h2", null, "Past games") : null,
       past.length ? el("ul", { class: "games" }, ...past.map(item)) : null
     );
@@ -104,7 +163,7 @@
     if (slug !== "generic" && !/^[a-z0-9-]+$/.test(slug)) throw new Error("Unknown game");
     const game = slug === "generic" ? { title: "Any game", squares: [] } : await getJSON("games/" + slug + ".json");
     const genericFile = game.generic === "college" ? "data/generic-college.json" : "data/generic.json";
-    const generic = await getJSON(genericFile);
+    const [generic, prizes] = await Promise.all([getJSON(genericFile), getPrizes(game)]);
     const key = "fbbingo:" + CARD_VERSION + ":" + slug;
     let state = store.get(key);
     if (!state || !Array.isArray(state.squares) || state.squares.length !== PER_CARD) {
@@ -130,6 +189,7 @@
     const cells = [];
     let prevIds = new Set(checkWins(state.marked).wins.map((w) => w.id));
     const winCount = el("span", { class: "win-count" });
+    const rulesHref = "?view=rules&game=" + encodeURIComponent(slug);
 
     function refresh(fromTap) {
       const { cells: winCells, wins } = checkWins(state.marked);
@@ -142,28 +202,37 @@
       const total = wins.length;
       card.classList.toggle("bingo", total > 0);
       card.classList.toggle("blackout", wins.some((w) => w.kind === "blackout"));
-      winCount.textContent = total ? "🏆 " + total + (total === 1 ? " win" : " wins") : "";
-      // Pop up for every new win this tap created.
+      const won = owed(wins, prizes);
+      winCount.textContent = total ? (won ? "💵 " + money(won) + " won · " : "🏆 ") + total + (total === 1 ? " bingo" : " bingos") : "";
+      // Pop up for every new win this tap created, with what it pays.
       const fresh = wins.filter((w) => !prevIds.has(w.id));
-      if (fromTap && fresh.length) celebrate(fresh, total);
+      const before = owed(wins.filter((w) => prevIds.has(w.id)), prizes);
+      if (fromTap && fresh.length) celebrate(fresh, won - before, won);
       prevIds = new Set(wins.map((w) => w.id));
     }
 
-    function celebrate(fresh, total) {
+    function celebrate(fresh, newMoney, totalMoney) {
       const kinds = fresh.map((w) => w.kind);
+      const lines = kinds.filter((k) => k === "line").length;
       let title, sub;
-      if (kinds.includes("blackout")) {
-        title = "BLACKOUT! 🏆"; sub = "You covered the whole card!";
+      if (kinds.includes("blackout")) title = "BLACKOUT! 🏆";
+      else title = (kinds.includes("corners") && !lines ? "FOUR CORNERS" : (MULTI[fresh.length] ?? fresh.length + "X ") + "BINGO") + "! 🎉";
+      // A blackout always comes after a bingo, so a blackout tap only ever adds the blackout bonus.
+      const prize = kinds.includes("blackout") ? prizes.blackout : prizes.bingo;
+      if (newMoney > 0 && prize) {
+        sub = "That's " + prize.paidAs + ". Show your card to the host to collect." +
+          (totalMoney > newMoney ? " This card has won " + money(totalMoney) + " in all." : "");
+      } else if (totalMoney > 0) {
+        sub = "This card already won its bingo prize (" + money(totalMoney) + "), so this one is for bragging rights." +
+          (prizes.blackout ? " Keep going for the +" + money(prizes.blackout.amount) + " blackout!" : "");
       } else {
-        const lines = kinds.filter((k) => k === "line").length;
-        const parts = [];
-        if (lines) parts.push(lines === 1 ? "a new line" : lines + " new lines");
-        if (kinds.includes("corners")) parts.push("four corners");
-        title = (kinds.includes("corners") && !lines ? "FOUR CORNERS" : (MULTI[fresh.length] ?? fresh.length + "X ") + "BINGO") + "! 🎉";
-        sub = "You got " + parts.join(" and ") + ".";
+        sub = "Nice! Show your card to the room.";
       }
+      const prizeEl = banner.querySelector(".banner-prize");
+      prizeEl.textContent = newMoney > 0 ? "You won " + money(newMoney) + "!" : "";
+      prizeEl.hidden = !(newMoney > 0);
       banner.querySelector(".banner-title").textContent = title;
-      banner.querySelector(".banner-sub").textContent = sub + " That's " + total + (total === 1 ? " win" : " wins") + " on this card.";
+      banner.querySelector(".banner-sub").textContent = sub;
       banner.hidden = false;
       if (navigator.vibrate) navigator.vibrate(kinds.includes("blackout") ? [200, 80, 200, 80, 400] : [120, 60, 120]);
     }
@@ -203,7 +272,10 @@
       header,
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
       card,
-      el("p", { class: "rules" }, "Win with any row, column or diagonal, all four corners, or a blackout (the whole card)."),
+      el("p", { class: "rules" },
+        prizes.bingo ? "First bingo pays " + money(prizes.bingo.amount) + " per card" + (prizes.blackout ? " · Blackout +" + money(prizes.blackout.amount) : "") + " · "
+                     : "Any line, four corners or blackout · ",
+        el("a", { href: rulesHref }, "Rules")),
       el("div", { class: "actions" },
         el("button", { type: "button", class: "primary", onclick: () => {
           if (!confirm("Get a brand-new card? Your marks on this one will be lost.")) return;
@@ -213,8 +285,9 @@
           if (!state.marked.length || !confirm("Clear all your marks?")) return;
           state.marked = []; save(); refresh(false);
         } }, "Clear marks"),
+        el("a", { class: "btn", href: rulesHref }, "📜 Rules & prizes"),
         shareBtn,
-        el("a", { class: "btn", href: "?all" }, "All games"))
+        el("a", { class: "btn wide", href: "?all" }, "All games"))
     );
     refresh(false);
     keepAwake();
@@ -234,6 +307,7 @@
   const params = new URLSearchParams(location.search);
   async function start() {
     const slug = params.get("game");
+    if (params.get("view") === "rules") return showRules(slug);
     if (slug) return showGame(slug);
     if (!params.has("all")) {
       let games = [];

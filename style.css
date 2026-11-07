@@ -55,6 +55,15 @@ h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spa
 .win-count { font-weight: 700; color: var(--ink); }
 .rules { text-align: center; color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
 .card.blackout { background: color-mix(in srgb, var(--mark) 18%, var(--surface)); }
+.btn.wide { grid-column: 1 / -1; }
+a.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rules-page h2 { margin-top: 20px; }
+.rules-page ul { padding-left: 20px; margin: 8px 0; }
+.rules-page li { margin: 6px 0; }
+.rules-page ul.prizes { list-style: none; padding: 0; display: grid; gap: 8px; }
+.prizes li { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+             border-radius: 12px; padding: 12px 14px; margin: 0; }
+.prizes .amt { font-size: 1.5rem; font-weight: 900; color: var(--accent); min-width: 3.2em; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 button, .btn { font: inherit; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
                background: var(--surface); color: var(--ink); cursor: pointer; text-align: center; text-decoration: none; }
@@ -67,6 +76,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .banner-inner { background: var(--mark); color: var(--mark-ink); border-radius: 18px; padding: 28px 24px;
                 text-align: center; max-width: 340px; width: 100%; animation: pop .35s ease-out; }
 .banner-title { font-size: 2.6rem; font-weight: 900; }
+.banner-prize { font-size: 1.6rem; font-weight: 900; margin-top: 6px; }
+.banner-prize[hidden] { display: none; }
 .banner-sub { margin: 6px 0 16px; }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .banner-inner { animation: none; } }

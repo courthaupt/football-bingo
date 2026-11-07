@@ -10,6 +10,7 @@ Friends open it on their phones, pick a game, and each get their own random card
 - `index.html`, `style.css`, `app.js`: the app
 - `data/generic.json`: general NFL squares used to fill out every card
 - `data/generic-college.json`: general college squares (a game opts in with `"generic": "college"`)
+- `data/prizes.json`: prize amounts and how each is paid (scratch-off tickets). A game can override it with `"prizes"`
 - `games/index.json`: the list of games shown on the home page
 - `games/<slug>.json`: one file per game, with that matchup's own squares
 - `scripts/validate.js`: run `node scripts/validate.js` before every commit
@@ -57,6 +58,10 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
 Any row, column or diagonal, four corners, or blackout (all 24 squares). Every new win gets its own
 pop-up (each extra line counts), and the card shows a running win count. If a change to card building should reset everyone's cards,
 bump `CARD_VERSION` in `app.js`.
+
+## Prizes
+One bingo prize per card (first line or four corners), plus a blackout bonus. Amounts live in
+`data/prizes.json`. The rules page (`?view=rules&game=<slug>`) and the win pop-ups read from it.
 
 ## Caching
 GitHub Pages lets browsers cache files for up to 10 minutes. When you change `app.js` or
