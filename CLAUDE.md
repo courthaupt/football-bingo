@@ -58,6 +58,12 @@ Any row, column or diagonal, four corners, or blackout (all 24 squares). Each pa
 own pop-up the first time it's hit. If a change to card building should reset everyone's cards,
 bump `CARD_VERSION` in `app.js`.
 
+## Caching
+GitHub Pages lets browsers cache files for up to 10 minutes. When you change `app.js` or
+`style.css`, bump the `?v=` value on both in `index.html` (use the current date and time,
+YYYYMMDDHHMM) so phones load matching files. Game JSON is fetched with `no-cache` and
+doesn't need this.
+
 ## Testing locally
 `fetch` doesn't work over `file://`. Run `python3 -m http.server 8000` in the repo and open
 http://localhost:8000/.
