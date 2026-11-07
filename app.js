@@ -15,6 +15,7 @@
 
   // ---------- helpers ----------
   const store = {
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* private mode */ } },
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
   };
@@ -110,7 +111,7 @@
     const key = "fbbingo:" + CARD_VERSION + ":" + slug;
     let state = store.get(key);
     if (!state || !Array.isArray(state.squares) || state.squares.length !== PER_CARD) {
-      state = { squares: buildSquares(game, generic), marked: [], name: (store.get("fbbingo:name") || "") };
+      state = { squares: buildSquares(game, generic), marked: [] };
       store.set(key, state);
     }
     const save = () => store.set(key, state);
@@ -127,12 +128,6 @@
           el("span", { class: "team home" }, home.short || home.name))
       : el("h1", { style: "text-align:center" }, game.title);
 
-    const nameInput = el("input", { type: "text", placeholder: "Your name", maxlength: "30", "aria-label": "Your name" });
-    nameInput.value = state.name || "";
-    const footName = el("span", null, state.name || "");
-    nameInput.addEventListener("input", () => {
-      state.name = nameInput.value; footName.textContent = state.name; save(); store.set("fbbingo:name", state.name);
-    });
 
     const card = el("div", { class: "card" });
     const cells = [];
@@ -180,7 +175,7 @@
       grid.append(cell);
     }
     card.append(el("div", { class: "letters" }, ..."BINGO".split("").map((l) => el("span", null, l))), grid,
-      el("div", { class: "card-foot" }, footName, el("span", null, game.title)));
+      el("div", { class: "card-foot" }, el("span", null, game.title)));
 
     const shareBtn = el("button", { type: "button", onclick: async () => {
       const url = location.href;
@@ -193,7 +188,6 @@
     app.replaceChildren(
       header,
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
-      el("div", { class: "name" }, nameInput),
       card,
       el("p", { class: "rules" }, "Win with any row, column or diagonal, all four corners, or a blackout (the whole card)."),
       el("div", { class: "actions" },
@@ -218,6 +212,8 @@
     try { if ("wakeLock" in navigator && !lock) { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); } } catch (e) { /* not allowed */ }
   }
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && /[?&]game=/.test(location.search)) keepAwake(); });
+
+  store.del("fbbingo:name"); // earlier versions saved a player name; remove it
 
   document.getElementById("banner-close").addEventListener("click", () => { banner.hidden = true; });
 

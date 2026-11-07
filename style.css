@@ -34,9 +34,6 @@ h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spa
 .matchup .home { background: var(--home); }
 .matchup .at { color: var(--muted); font-weight: 600; font-size: 1rem; }
 .subtitle { text-align: center; color: var(--muted); font-size: .9rem; margin: 0 0 12px; }
-.name { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-.name input { flex: 1; font: inherit; padding: 8px 10px; border-radius: 8px;
-              border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 
 /* Card */
 .card { background: var(--surface); border: 3px solid var(--accent); border-radius: 14px; padding: 8px; }
@@ -53,7 +50,7 @@ h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spa
 .cell.marked { background: var(--mark); color: var(--mark-ink); font-weight: 700; border-color: var(--mark); }
 .cell.win { outline: 3px solid var(--accent); outline-offset: -3px; }
 .cell.free { background: var(--accent); color: #fff; font-weight: 800; cursor: default; }
-.card-foot { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: 6px; }
+.card-foot { display: flex; justify-content: flex-end; font-size: .8rem; color: var(--muted); margin-top: 6px; }
 
 .rules { text-align: center; color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
 .card.blackout { background: color-mix(in srgb, var(--mark) 18%, var(--surface)); }
