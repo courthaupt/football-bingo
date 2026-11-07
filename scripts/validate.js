@@ -45,6 +45,16 @@ for (const g of index) {
     const t = game[side];
     if (!t || !t.name || !t.short) fail(file + ": " + side + " needs name and short");
     else if (t.color && !/^#[0-9a-fA-F]{6}$/.test(t.color)) fail(file + ": " + side + ".color must be #rrggbb");
+    if (t && t.theme) {
+      const hex = /^#[0-9a-fA-F]{6}$/;
+      for (const [k, v] of Object.entries(t.theme)) {
+        if (k === "dark") { for (const [k2, v2] of Object.entries(v)) if (!hex.test(v2)) fail(file + ": " + side + ".theme.dark." + k2 + " must be #rrggbb"); }
+        else if (!hex.test(v)) fail(file + ": " + side + ".theme." + k + " must be #rrggbb");
+      }
+    }
+  }
+  if (game.teamPicker && !(game.away && game.away.theme && game.home && game.home.theme)) fail(file + ": teamPicker needs away.theme and home.theme");
+  {
   }
   checkSquares(file, game.squares, 20);
   if (game.generic && !["nfl", "college"].includes(game.generic)) fail(file + ': generic must be "nfl" or "college"');

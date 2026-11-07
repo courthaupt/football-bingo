@@ -38,6 +38,10 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
    Use the team's primary color, a dark one that's readable with white text on it.
    Optional fields: `"generic": "college"` for college games (uses `data/generic-college.json`),
    and `"specificPerCard": N` to override how many game squares each card gets.
+   Team picker: set `"teamPicker": true` and give each team a `"theme"` (`accent`, `mark`,
+   `markInk`, `win`, `glow`, `letters`, plus an optional `"dark"` set of overrides). The card starts
+   grayscale, and tapping a team badge colors it in that team's theme. See the Michigan State at
+   Michigan game file for an example.
 4. **Squares**: write 25–35 game-specific ones. Cards are 30% matchup / 70% generic: each card
    draws 7 game squares and 17 generic ones (including commercial squares), so friends' cards differ. Rules:
    - At most 32 characters. Shorter is better, since cells are small on phones. Use last names.

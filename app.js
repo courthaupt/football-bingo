@@ -51,6 +51,25 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
+  // ---------- team themes ----------
+  // A theme sets the card's colors. Optional "dark" values override them in dark mode.
+  const GRAYSCALE = {
+    accent: "#4a4a4a", mark: "#cfcfcf", markInk: "#111111", win: "#4a4a4a", glow: "#9a9a9a", letters: "#4a4a4a",
+    dark: { accent: "#6e6e6e", mark: "#5c5c5c", markInk: "#ffffff", win: "#e0e0e0", glow: "#8a8a8a", letters: "#d0d0d0" }
+  };
+  const THEME_VARS = { accent: "--accent", mark: "--mark", markInk: "--mark-ink", win: "--win", glow: "--glow", letters: "--letters" };
+  const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  let currentTheme = null;
+  function applyTheme(theme) {
+    currentTheme = theme;
+    const t = Object.assign({}, theme, darkMQ && darkMQ.matches ? theme.dark : {});
+    for (const [k, v] of Object.entries(THEME_VARS)) {
+      if (t[k]) document.documentElement.style.setProperty(v, t[k]);
+      else document.documentElement.style.removeProperty(v);
+    }
+  }
+  if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", () => { if (currentTheme) applyTheme(currentTheme); });
+
   // ---------- prizes ----------
   // Site-wide prizes live in data/prizes.json; a game file can override them with "prizes".
   async function getPrizes(game) {
@@ -193,11 +212,30 @@
     if (away.color) document.documentElement.style.setProperty("--away", away.color);
     if (home.color) document.documentElement.style.setProperty("--home", home.color);
 
+    // Team picker: tap a team to color the card in its theme; no pick = grayscale.
+    const picker = !!(game.teamPicker && away.theme && home.theme);
+    const teamKey = "fbbingo:team:" + slug;
+    let team = picker ? store.get(teamKey) : null;
+    if (team !== "away" && team !== "home") team = null;
+    const hint = el("p", { class: "team-hint" });
+    const badge = (side, t) => picker
+      ? el("button", { type: "button", class: "team " + side, "aria-pressed": "false", onclick: () => {
+          team = team === side ? null : side; store.set(teamKey, team); paintTeam();
+        } }, t.short || t.name)
+      : el("span", { class: "team " + side }, t.short || t.name);
+    const awayBadge = away.name ? badge("away", away) : null, homeBadge = home.name ? badge("home", home) : null;
+    function paintTeam() {
+      if (!picker) return;
+      applyTheme(team ? game[team].theme : GRAYSCALE);
+      for (const [b, side] of [[awayBadge, "away"], [homeBadge, "home"]]) {
+        b.classList.toggle("picked", team === side);
+        b.classList.toggle("dim", !!team && team !== side);
+        b.setAttribute("aria-pressed", team === side ? "true" : "false");
+      }
+      hint.textContent = team ? "Go " + game[team].short + "! Tap again to go back to gray." : "Tap your team to color your card.";
+    }
     const header = away.name && home.name
-      ? el("div", { class: "matchup" },
-          el("span", { class: "team away" }, away.short || away.name),
-          el("span", { class: "at" }, "at"),
-          el("span", { class: "team home" }, home.short || home.name))
+      ? el("div", { class: "matchup" + (picker ? " pickable" : "") }, awayBadge, el("span", { class: "at" }, "at"), homeBadge)
       : el("h1", { style: "text-align:center" }, game.title);
 
 
@@ -278,6 +316,7 @@
     app.replaceChildren(
       header,
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
+      picker ? hint : null,
       card,
       el("p", { class: "rules" },
         prizes.firstBingo ? "First bingo " + money(prizes.firstBingo) + (prizes.extraBingo ? " · Each extra +" + money(prizes.extraBingo) : "") + (prizes.blackout ? " · Blackout +" + money(prizes.blackout) : "") + " · "
@@ -297,6 +336,7 @@
         el("a", { class: "btn wide", href: "?all" }, "All games"))
     );
     refresh(false);
+    paintTeam();
     keepAwake();
   }
 

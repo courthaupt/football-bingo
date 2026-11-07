@@ -3,15 +3,42 @@
   "date": "2026-11-07",
   "kickoff": "7:30 PM ET \u00b7 Peacock",
   "generic": "college",
+  "teamPicker": true,
   "away": {
     "name": "Michigan State Spartans",
     "short": "Spartans",
-    "color": "#18453B"
+    "color": "#18453B",
+    "theme": {
+      "accent": "#18453B",
+      "mark": "#18453B",
+      "markInk": "#FFFFFF",
+      "win": "#FFFFFF",
+      "glow": "#7DB38A",
+      "letters": "#18453B",
+      "dark": {
+        "accent": "#2E6B58",
+        "letters": "#FFFFFF",
+        "win": "#FFFFFF"
+      }
+    }
   },
   "home": {
     "name": "Michigan Wolverines",
     "short": "Wolverines",
-    "color": "#00274C"
+    "color": "#00274C",
+    "theme": {
+      "accent": "#00274C",
+      "mark": "#FFCB05",
+      "markInk": "#00274C",
+      "win": "#00274C",
+      "glow": "#FFCB05",
+      "letters": "#00274C",
+      "dark": {
+        "accent": "#1C4A7A",
+        "letters": "#FFCB05",
+        "win": "#00274C"
+      }
+    }
   },
   "squares": [
     "Tommy Carr TD pass",
