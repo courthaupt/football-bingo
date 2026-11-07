@@ -55,6 +55,8 @@ h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spa
 .cell.free { background: var(--accent); color: #fff; font-weight: 800; cursor: default; }
 .card-foot { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: 6px; }
 
+.rules { text-align: center; color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
+.card.blackout { background: color-mix(in srgb, var(--mark) 18%, var(--surface)); }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 button, .btn { font: inherit; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
                background: var(--surface); color: var(--ink); cursor: pointer; text-align: center; text-decoration: none; }

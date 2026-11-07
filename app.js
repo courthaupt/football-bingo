@@ -3,7 +3,15 @@
   const app = document.getElementById("app");
   const banner = document.getElementById("banner");
   const SIZE = 5, FREE = 12, PER_CARD = 24;
-  const DEFAULT_SPECIFIC = 14; // game-specific squares per card; the rest come from data/generic.json
+  // Share of each card drawn from the game's own squares (30% of 24 = 7); the rest come from the generic list.
+  const SPECIFIC_SHARE = 0.3;
+  const CORNERS = [0, 4, 20, 24];
+  const CARD_VERSION = "v2"; // bump to give everyone fresh cards after a change to how cards are built
+  const WIN_TEXT = {
+    line: ["BINGO! 🎉", "Five in a row. Show your card to the room."],
+    corners: ["FOUR CORNERS! 🎉", "All four corners. Show your card to the room."],
+    blackout: ["BLACKOUT! 🏆", "You covered the whole card!"]
+  };
 
   // ---------- helpers ----------
   const store = {
@@ -72,13 +80,14 @@
   function buildSquares(game, generic) {
     const specific = shuffle(uniq(game.squares));
     const gen = shuffle(uniq(generic).filter((s) => !specific.includes(s)));
-    const n = Math.min(specific.length, game.specificPerCard ?? DEFAULT_SPECIFIC);
+    const n = Math.min(specific.length, game.specificPerCard ?? Math.round(PER_CARD * SPECIFIC_SHARE));
     let picks = specific.slice(0, n).concat(gen.slice(0, PER_CARD - n));
     if (picks.length < PER_CARD) picks = picks.concat(specific.slice(n, n + PER_CARD - picks.length));
     return shuffle(picks).slice(0, PER_CARD);
   }
 
-  function winningCells(marked) {
+  // Winning patterns: any row/column/diagonal, four corners, or the whole card (blackout).
+  function checkWins(marked) {
     const on = (i) => i === FREE || marked.includes(i);
     const lines = [];
     for (let r = 0; r < SIZE; r++) {
@@ -86,9 +95,11 @@
       lines.push([0, 1, 2, 3, 4].map((c) => c * SIZE + r));
     }
     lines.push([0, 6, 12, 18, 24], [4, 8, 12, 16, 20]);
-    const wins = new Set();
-    for (const line of lines) if (line.every(on)) line.forEach((i) => wins.add(i));
-    return wins;
+    const cells = new Set(), kinds = new Set();
+    for (const line of lines) if (line.every(on)) { kinds.add("line"); line.forEach((i) => cells.add(i)); }
+    if (CORNERS.every(on)) { kinds.add("corners"); CORNERS.forEach((i) => cells.add(i)); }
+    if (marked.length >= PER_CARD) kinds.add("blackout");
+    return { cells, kinds };
   }
 
   async function showGame(slug) {
@@ -96,7 +107,7 @@
     const game = slug === "generic" ? { title: "Any game", squares: [] } : await getJSON("games/" + slug + ".json");
     const genericFile = game.generic === "college" ? "data/generic-college.json" : "data/generic.json";
     const generic = await getJSON(genericFile);
-    const key = "fbbingo:" + slug;
+    const key = "fbbingo:" + CARD_VERSION + ":" + slug;
     let state = store.get(key);
     if (!state || !Array.isArray(state.squares) || state.squares.length !== PER_CARD) {
       state = { squares: buildSquares(game, generic), marked: [], name: (store.get("fbbingo:name") || "") };
@@ -125,22 +136,27 @@
 
     const card = el("div", { class: "card" });
     const cells = [];
-    let hadBingo = winningCells(state.marked).size > 0;
+    let prevKinds = checkWins(state.marked).kinds;
 
     function refresh(fromTap) {
-      const wins = winningCells(state.marked);
+      const { cells: winCells, kinds } = checkWins(state.marked);
       cells.forEach((c, i) => {
         if (i === FREE) return;
         c.classList.toggle("marked", state.marked.includes(i));
-        c.classList.toggle("win", wins.has(i));
+        c.classList.toggle("win", winCells.has(i));
         c.setAttribute("aria-pressed", state.marked.includes(i) ? "true" : "false");
       });
-      card.classList.toggle("bingo", wins.size > 0);
-      if (fromTap && wins.size > 0 && !hadBingo) {
+      card.classList.toggle("bingo", kinds.size > 0);
+      card.classList.toggle("blackout", kinds.has("blackout"));
+      // Celebrate the best pattern that just appeared (blackout > corners > line).
+      const fresh = ["blackout", "corners", "line"].find((k) => kinds.has(k) && !prevKinds.has(k));
+      if (fromTap && fresh) {
+        banner.querySelector(".banner-title").textContent = WIN_TEXT[fresh][0];
+        banner.querySelector(".banner-sub").textContent = WIN_TEXT[fresh][1];
         banner.hidden = false;
-        if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+        if (navigator.vibrate) navigator.vibrate(fresh === "blackout" ? [200, 80, 200, 80, 400] : [120, 60, 120]);
       }
-      hadBingo = wins.size > 0;
+      prevKinds = kinds;
     }
 
     const grid = el("div", { class: "grid" });
@@ -179,6 +195,7 @@
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
       el("div", { class: "name" }, nameInput),
       card,
+      el("p", { class: "rules" }, "Win with any row, column or diagonal, all four corners, or a blackout (the whole card)."),
       el("div", { class: "actions" },
         el("button", { type: "button", class: "primary", onclick: () => {
           if (!confirm("Get a brand-new card? Your marks on this one will be lost.")) return;

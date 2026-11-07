@@ -5,8 +5,8 @@ Phone-friendly bingo cards for watching NFL games with friends.
 **Play:** https://courthaupt.github.io/football-bingo/
 
 - Pick the game you're watching. Every person gets their own random card.
-- Each game has its own squares about that matchup (players, coaches, storylines), mixed with general NFL squares.
-- Tap a square when it happens. Get 5 in a row (across, down or diagonal) for BINGO.
+- About 30% of each card is about that matchup (players, coaches, storylines). The other 70% is general football and TV-commercial squares.
+- Tap a square when it happens. Win with any row, column or diagonal, all four corners, or a blackout (the whole card).
 - Your card and marks stay on your phone if you refresh or lock the screen.
 
 ## Adding a game

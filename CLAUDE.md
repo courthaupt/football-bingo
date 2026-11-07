@@ -35,9 +35,9 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
    ```
    Use the team's primary color, a dark one that's readable with white text on it.
    Optional fields: `"generic": "college"` for college games (uses `data/generic-college.json`),
-   and `"specificPerCard": 15` to change how many game squares each card gets (default 14).
-4. **Squares**: write 28–36 game-specific ones. Each card draws 14 of them plus 10 generic ones,
-   so friends' cards differ. Rules:
+   and `"specificPerCard": N` to override how many game squares each card gets.
+4. **Squares**: write 25–35 game-specific ones. Cards are 30% matchup / 70% generic: each card
+   draws 7 game squares and 17 generic ones (including commercial squares), so friends' cards differ. Rules:
    - At most 32 characters. Shorter is better, since cells are small on phones. Use last names.
    - Split them roughly evenly between the two teams, plus some broadcast/storyline squares
      (announcer mentions X, shot of a celebrity fan, stat graphic about a streak).
@@ -52,6 +52,11 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
 6. Run `node scripts/validate.js`, commit, and push to `main`.
 7. Give the user the share link: `https://courthaupt.github.io/football-bingo/?game=<slug>`
    and a few sample squares.
+
+## Winning
+Any row, column or diagonal, four corners, or blackout (all 24 squares). Each pattern gets its
+own pop-up the first time it's hit. If a change to card building should reset everyone's cards,
+bump `CARD_VERSION` in `app.js`.
 
 ## Testing locally
 `fetch` doesn't work over `file://`. Run `python3 -m http.server 8000` in the repo and open
