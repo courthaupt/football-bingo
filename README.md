@@ -1,19 +1,17 @@
-# Football Bingo
+# Football Bingo 🏈
 
-Random, printable bingo cards for watching football games. It's a static site with no build step and no dependencies.
+Phone-friendly bingo cards for watching NFL games with friends.
 
-## Use it
+**Play:** https://courthaupt.github.io/football-bingo/
 
-Open `index.html` in a browser, or host the folder on GitHub Pages (Settings → Pages → deploy from the `main` branch).
+- Pick the game you're watching. Every person gets their own random card.
+- Each game has its own squares about that matchup (players, coaches, storylines), mixed with general NFL squares.
+- Tap a square when it happens. Get 5 in a row (across, down or diagonal) for BINGO.
+- Your card and marks stay on your phone if you refresh or lock the screen.
 
-- Pick a square set: **American football (NFL)** or **Soccer**.
-- Choose how many cards to make. Each card is shuffled separately.
-- Tap squares as things happen. A card lights up when it gets a row, column or diagonal.
-- **Print** puts two cards on each page.
-- Use **Edit squares** to add your own (one per line, at least 24 with the free space).
+## Adding a game
+Ask Claude, e.g. "make a bingo game for Eagles at Cowboys on Sunday". The steps it follows are in [`CLAUDE.md`](CLAUDE.md).
+Or add it yourself: create `games/<slug>.json`, list it in `games/index.json`, and run `node scripts/validate.js`.
 
-## Files
-
-- `index.html`: page layout and styles
-- `app.js`: card generation, marking and bingo detection
-- `squares.js`: default square lists (edit these to change the defaults)
+## Hosting
+GitHub Pages: Settings → Pages → Deploy from a branch → `main` / root.

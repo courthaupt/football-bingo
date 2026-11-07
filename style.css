@@ -1,0 +1,70 @@
+:root {
+  --bg: #f4f1ea; --surface: #ffffff; --ink: #1d2420; --muted: #5b655f;
+  --line: #d3d8d2; --accent: #1f4d2b; --mark: #f2b632; --mark-ink: #1d2420;
+  --away: #1f4d2b; --home: #8a2b1f;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111512; --surface: #1c221d; --ink: #e9ede9; --muted: #9aa69d;
+          --line: #343d36; --accent: #5fae6c; }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+       padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+main { max-width: 540px; margin: 0 auto; padding: 16px; }
+a { color: var(--accent); }
+h1 { font-size: 1.6rem; margin: 4px 0 4px; }
+.muted { color: var(--muted); }
+.loading, .error { text-align: center; padding: 40px 0; color: var(--muted); }
+
+/* Game list */
+.games { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
+.games a { display: block; text-decoration: none; color: var(--ink); background: var(--surface);
+           border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.games a:active { transform: scale(.99); }
+.games .title { font-weight: 700; font-size: 1.05rem; }
+.games .when { color: var(--muted); font-size: .9rem; }
+h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 24px 0 0; }
+
+/* Game header */
+.matchup { display: flex; align-items: center; justify-content: center; gap: 10px;
+           font-weight: 800; font-size: 1.25rem; text-align: center; margin: 4px 0 2px; }
+.matchup .team { padding: 4px 10px; border-radius: 8px; color: #fff; }
+.matchup .away { background: var(--away); }
+.matchup .home { background: var(--home); }
+.matchup .at { color: var(--muted); font-weight: 600; font-size: 1rem; }
+.subtitle { text-align: center; color: var(--muted); font-size: .9rem; margin: 0 0 12px; }
+.name { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.name input { flex: 1; font: inherit; padding: 8px 10px; border-radius: 8px;
+              border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+
+/* Card */
+.card { background: var(--surface); border: 3px solid var(--accent); border-radius: 14px; padding: 8px; }
+.card.bingo { border-color: var(--mark); box-shadow: 0 0 0 3px var(--mark); }
+.letters, .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.letters { text-align: center; font-weight: 900; font-size: 1.5rem; color: var(--accent); margin-bottom: 4px; }
+.cell { aspect-ratio: 1; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 6px;
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        padding: 2px; font-size: clamp(.6rem, 2.7vw, .82rem); line-height: 1.12;
+        overflow-wrap: break-word; hyphens: auto; cursor: pointer; user-select: none;
+        background: none; color: inherit; font-family: inherit; }
+.cell.marked { background: var(--mark); color: var(--mark-ink); font-weight: 700; border-color: var(--mark); }
+.cell.win { outline: 3px solid var(--accent); outline-offset: -3px; }
+.cell.free { background: var(--accent); color: #fff; font-weight: 800; cursor: default; }
+.card-foot { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: 6px; }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+button, .btn { font: inherit; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
+               background: var(--surface); color: var(--ink); cursor: pointer; text-align: center; text-decoration: none; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Bingo banner */
+.banner { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex;
+          align-items: center; justify-content: center; padding: 24px; z-index: 10; }
+.banner[hidden] { display: none; }
+.banner-inner { background: var(--mark); color: var(--mark-ink); border-radius: 18px; padding: 28px 24px;
+                text-align: center; max-width: 340px; width: 100%; animation: pop .35s ease-out; }
+.banner-title { font-size: 2.6rem; font-weight: 900; }
+.banner-sub { margin: 6px 0 16px; }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .banner-inner { animation: none; } }
