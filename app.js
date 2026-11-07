@@ -51,32 +51,29 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
+  // Replace the page content, skipping empty (null/false) slots so they don't print as "null".
+  const render = (...kids) => app.replaceChildren(...kids.filter((k) => k != null && k !== false));
+
   // ---------- team themes ----------
   // A theme sets the card's colors. Optional "dark" values override them in dark mode.
-  const GRAYSCALE = {
-    accent: "#4a4a4a", mark: "#cfcfcf", markInk: "#111111", win: "#4a4a4a", glow: "#9a9a9a", letters: "#4a4a4a",
-    dark: { accent: "#6e6e6e", mark: "#5c5c5c", markInk: "#ffffff", win: "#e0e0e0", glow: "#8a8a8a", letters: "#d0d0d0" }
-  };
+  // The gray look is the default in style.css; a team theme overrides it, and null goes back to gray.
   const THEME_VARS = { accent: "--accent", mark: "--mark", markInk: "--mark-ink", win: "--win", glow: "--glow", letters: "--letters" };
   const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   let currentTheme = null;
   function applyTheme(theme) {
     currentTheme = theme;
-    const t = Object.assign({}, theme, darkMQ && darkMQ.matches ? theme.dark : {});
+    const t = theme ? Object.assign({}, theme, darkMQ && darkMQ.matches ? theme.dark : {}) : {};
     for (const [k, v] of Object.entries(THEME_VARS)) {
       if (t[k]) document.documentElement.style.setProperty(v, t[k]);
       else document.documentElement.style.removeProperty(v);
     }
   }
-  if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", () => { if (currentTheme) applyTheme(currentTheme); });
+  if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", () => { applyTheme(currentTheme); });
 
   // ---------- prizes ----------
-  // Site-wide prizes live in data/prizes.json; a game file can override them with "prizes".
-  async function getPrizes(game) {
-    let base = {};
-    try { base = await getJSON("data/prizes.json"); } catch (e) { /* no prizes */ }
-    return Object.assign({}, base, (game && game.prizes) || {});
-  }
+  // Prizes come only from a game file's "prizes"; games without it are just for fun.
+  const getPrizes = (game) => (game && game.prizes) || {};
+  const hasPrizes = (p) => !!(p.firstBingo || p.extraBingo || p.blackout);
   const money = (n) => "$" + n;
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   // Each prize is paid as one ticket of that amount: first bingo, each extra bingo, blackout bonus.
@@ -104,15 +101,16 @@
 
   // ---------- rules ----------
   async function showRules(slug) {
-    document.title = "Rules & prizes · Football Bingo";
+    document.title = "How to play · Football Bingo";
     let game = null;
     if (slug && /^[a-z0-9-]+$/.test(slug) && slug !== "generic") { try { game = await getJSON("games/" + slug + ".json"); } catch (e) { /* default prizes */ } }
-    const prizes = await getPrizes(game);
+    const prizes = getPrizes(game), paid = hasPrizes(prizes);
+    if (game && game.teamPicker) { const t = store.get("fbbingo:team:" + slug); if (game[t] && game[t].theme) applyTheme(game[t].theme); }
     const f = prizes.firstBingo, e = prizes.extraBingo, x = prizes.blackout, kind = prizes.payWith || "ticket";
     const li = (...kids) => el("li", null, ...kids);
     const strong = (t) => el("strong", null, t);
-    app.replaceChildren(
-      el("h1", null, "📜 Rules & prizes"),
+    render(
+      el("h1", null, paid ? "📜 Rules & prizes" : "📜 How to play"),
       game ? el("p", { class: "muted" }, game.title + (game.kickoff ? " · " + game.kickoff : "")) : null,
       el("section", { class: "rules-page" },
         el("h2", null, "How to play"),
@@ -127,16 +125,16 @@
           li(strong("Bingo:"), " any row, column or diagonal of 5. The free space counts."),
           li(strong("Four corners:"), " all four corner squares. This also counts as a bingo."),
           li(strong("Blackout:"), " every square on your card.")),
-        el("h2", null, "Prizes"),
-        f || x ? el("ul", { class: "prizes" },
+        paid ? el("h2", null, "Prizes") : null,
+        paid ? el("ul", { class: "prizes" },
           f ? li(el("span", { class: "amt" }, money(f)), el("span", null, strong("Your card's first bingo"), el("br"), "One " + money(f) + " " + kind + ".")) : null,
           e ? li(el("span", { class: "amt" }, "+" + money(e)), el("span", null, strong("Every bingo after that"), el("br"), "One " + money(e) + " " + kind + " for each new line or four corners.")) : null,
           x ? li(el("span", { class: "amt" }, "+" + money(x)), el("span", null, strong("Blackout bonus"), el("br"), "One " + money(x) + " " + kind + ". It's a long shot!")) : null)
-          : el("p", null, "No prizes for this one. Just bragging rights."),
-        el("h2", null, "Claiming"),
-        el("ul", null,
+          : el("p", null, "No prizes for this game. Just bragging rights. The host has the final say on any disputed square."),
+        paid ? el("h2", null, "Claiming") : null,
+        paid ? el("ul", null,
           li("When the pop-up shows your prize, show your card to the host."),
-          li("The host has the final say on any disputed square."))),
+          li("The host has the final say on any disputed square.")) : null),
       el("div", { class: "actions" },
         slug ? el("a", { class: "btn primary", href: "?game=" + encodeURIComponent(slug) }, "Back to my card") : null,
         el("a", { class: "btn", href: "?all" }, "All games"))
@@ -155,13 +153,13 @@
     const item = (g) => el("li", null, el("a", { href: "?game=" + encodeURIComponent(g.slug) },
       el("div", { class: "title" }, g.title), el("div", { class: "when" }, fmtDate(g.date, g.kickoff))));
 
-    app.replaceChildren(
+    render(
       el("h1", null, "🏈 Football Bingo"),
       el("p", { class: "muted" }, "Pick the game you're watching. Everyone gets their own random card. Tap squares as they happen."),
       el("ul", { class: "games" }, ...upcoming.map(item),
         el("li", null, el("a", { href: "?game=generic" },
           el("div", { class: "title" }, "Any game"), el("div", { class: "when" }, "General NFL squares only")))),
-      el("p", null, el("a", { href: "?view=rules" }, "📜 Rules & prizes")),
+      el("p", null, el("a", { href: "?view=rules" }, "📜 How to play")),
       past.length ? el("h2", null, "Past games") : null,
       past.length ? el("ul", { class: "games" }, ...past.map(item)) : null
     );
@@ -198,7 +196,8 @@
     if (slug !== "generic" && !/^[a-z0-9-]+$/.test(slug)) throw new Error("Unknown game");
     const game = slug === "generic" ? { title: "Any game", squares: [] } : await getJSON("games/" + slug + ".json");
     const genericFile = game.generic === "college" ? "data/generic-college.json" : "data/generic.json";
-    const [generic, prizes] = await Promise.all([getJSON(genericFile), getPrizes(game)]);
+    const generic = await getJSON(genericFile);
+    const prizes = getPrizes(game);
     const key = "fbbingo:" + CARD_VERSION + ":" + slug;
     let state = store.get(key);
     if (!state || !Array.isArray(state.squares) || state.squares.length !== PER_CARD) {
@@ -226,7 +225,7 @@
     const awayBadge = away.name ? badge("away", away) : null, homeBadge = home.name ? badge("home", home) : null;
     function paintTeam() {
       if (!picker) return;
-      applyTheme(team ? game[team].theme : GRAYSCALE);
+      applyTheme(team ? game[team].theme : null);
       for (const [b, side] of [[awayBadge, "away"], [homeBadge, "home"]]) {
         b.classList.toggle("picked", team === side);
         b.classList.toggle("dim", !!team && team !== side);
@@ -313,7 +312,7 @@
 
     const shareBtn = el("button", { type: "button", onclick: () => showQR(game) }, "📱 Share QR code");
 
-    app.replaceChildren(
+    render(
       header,
       el("p", { class: "subtitle" }, fmtDate(game.date, game.kickoff) || "Tap a square when it happens"),
       picker ? hint : null,
@@ -331,7 +330,7 @@
           if (!state.marked.length || !confirm("Clear all your marks?")) return;
           state.marked = []; save(); refresh(false);
         } }, "Clear marks"),
-        el("a", { class: "btn", href: rulesHref }, "📜 Rules & prizes"),
+        el("a", { class: "btn", href: rulesHref }, hasPrizes(prizes) ? "📜 Rules & prizes" : "📜 How to play"),
         shareBtn,
         el("a", { class: "btn wide", href: "?all" }, "All games"))
     );
@@ -388,7 +387,7 @@
     return showList();
   }
   start().catch((e) => {
-    app.replaceChildren(el("p", { class: "error" }, "Couldn't load that game. "), el("p", { style: "text-align:center" }, el("a", { href: "?all" }, "See all games")));
+    render(el("p", { class: "error" }, "Couldn't load that game. "), el("p", { style: "text-align:center" }, el("a", { href: "?all" }, "See all games")));
     console.error(e);
   });
 })();

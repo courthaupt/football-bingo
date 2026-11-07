@@ -4,6 +4,12 @@
   "kickoff": "7:30 PM ET \u00b7 Peacock",
   "generic": "college",
   "teamPicker": true,
+  "prizes": {
+    "payWith": "scratch-off",
+    "firstBingo": 2,
+    "extraBingo": 1,
+    "blackout": 5
+  },
   "away": {
     "name": "Michigan State Spartans",
     "short": "Spartans",

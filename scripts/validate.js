@@ -53,6 +53,12 @@ for (const g of index) {
       }
     }
   }
+  if (game.prizes) {
+    for (const k of ["firstBingo", "extraBingo", "blackout"]) {
+      const v = game.prizes[k];
+      if (v !== undefined && !(Number.isInteger(v) && v > 0)) fail(file + ": prizes." + k + " must be a whole dollar amount");
+    }
+  }
   if (game.teamPicker && !(game.away && game.away.theme && game.home && game.home.theme)) fail(file + ": teamPicker needs away.theme and home.theme");
   {
   }

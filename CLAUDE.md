@@ -10,7 +10,6 @@ Friends open it on their phones, pick a game, and each get their own random card
 - `index.html`, `style.css`, `app.js`: the app
 - `data/generic.json`: general NFL squares used to fill out every card
 - `data/generic-college.json`: general college squares (a game opts in with `"generic": "college"`)
-- `data/prizes.json`: prize amounts (first bingo, each extra bingo, blackout) paid as scratch-offs. A game can override it with `"prizes"`
 - `games/index.json`: the list of games shown on the home page
 - `games/<slug>.json`: one file per game, with that matchup's own squares
 - `vendor/qrcode.js`: QR code generator (qrcode-generator 1.4.4, MIT) for the share pop-up
@@ -65,9 +64,16 @@ pop-up (each extra line counts), and the card shows a running win count. If a ch
 bump `CARD_VERSION` in `app.js`.
 
 ## Prizes
-A card's first bingo (any line or four corners) pays `firstBingo`, each bingo after that pays
-`extraBingo`, and a blackout adds `blackout`. Each prize is one ticket of that amount
-(`payWith`, e.g. scratch-off). Amounts live in `data/prizes.json`. The rules page (`?view=rules&game=<slug>`) and the win pop-ups read from it.
+Only games with a `"prizes"` object in their game file pay out. Right now that's just Michigan
+State at Michigan. Other games are for fun: no money in the pop-ups, and the rules page is "How to play".
+`"prizes": { "payWith": "scratch-off", "firstBingo": 2, "extraBingo": 1, "blackout": 5 }`:
+a card's first bingo (any line or four corners) pays `firstBingo`, each bingo after that pays
+`extraBingo`, and a blackout adds `blackout`. Each prize is one ticket of that amount. Only add
+prizes to a new game if the user asks. The rules page (`?view=rules&game=<slug>`) and the pop-ups read from it.
+
+## Look
+Every game is gray by default (set in `style.css`). Only games with `teamPicker` get team colors,
+and only after the player taps a team.
 
 ## Caching
 GitHub Pages lets browsers cache files for up to 10 minutes. When you change `app.js` or

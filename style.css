@@ -1,11 +1,14 @@
 :root {
-  --bg: #f4f1ea; --surface: #ffffff; --ink: #1d2420; --muted: #5b655f;
-  --line: #d3d8d2; --accent: #1f4d2b; --mark: #f2b632; --mark-ink: #1d2420;
-  --away: #1f4d2b; --home: #8a2b1f;
+  /* Default (gray) theme. A team theme picked on a game overrides --accent through --letters. */
+  --bg: #f4f4f2; --surface: #ffffff; --ink: #1d1f1e; --muted: #5f6362;
+  --line: #d5d7d6; --accent: #4a4a4a; --mark: #cfcfcf; --mark-ink: #111111;
+  --win: #4a4a4a; --glow: #9a9a9a; --letters: #4a4a4a;
+  --away: #4a4a4a; --home: #6e6e6e;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #111512; --surface: #1c221d; --ink: #e9ede9; --muted: #9aa69d;
-          --line: #343d36; --accent: #5fae6c; }
+  :root { --bg: #121313; --surface: #1d1f1f; --ink: #e9eaea; --muted: #9b9f9e;
+          --line: #363939; --accent: #6e6e6e; --mark: #5c5c5c; --mark-ink: #ffffff;
+          --win: #e0e0e0; --glow: #8a8a8a; --letters: #d0d0d0; }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
