@@ -7,11 +7,7 @@
   const SPECIFIC_SHARE = 0.3;
   const CORNERS = [0, 4, 20, 24];
   const CARD_VERSION = "v2"; // bump to give everyone fresh cards after a change to how cards are built
-  const WIN_TEXT = {
-    line: ["BINGO! 🎉", "Five in a row. Show your card to the room."],
-    corners: ["FOUR CORNERS! 🎉", "All four corners. Show your card to the room."],
-    blackout: ["BLACKOUT! 🏆", "You covered the whole card!"]
-  };
+  const MULTI = ["", "", "DOUBLE ", "TRIPLE ", "QUADRUPLE "];
 
   // ---------- helpers ----------
   const store = {
@@ -96,11 +92,12 @@
       lines.push([0, 1, 2, 3, 4].map((c) => c * SIZE + r));
     }
     lines.push([0, 6, 12, 18, 24], [4, 8, 12, 16, 20]);
-    const cells = new Set(), kinds = new Set();
-    for (const line of lines) if (line.every(on)) { kinds.add("line"); line.forEach((i) => cells.add(i)); }
-    if (CORNERS.every(on)) { kinds.add("corners"); CORNERS.forEach((i) => cells.add(i)); }
-    if (marked.length >= PER_CARD) kinds.add("blackout");
-    return { cells, kinds };
+    // Each win has its own id, so a second or third line counts as a new win.
+    const cells = new Set(), wins = [];
+    lines.forEach((line, n) => { if (line.every(on)) { wins.push({ id: "line" + n, kind: "line" }); line.forEach((i) => cells.add(i)); } });
+    if (CORNERS.every(on)) { wins.push({ id: "corners", kind: "corners" }); CORNERS.forEach((i) => cells.add(i)); }
+    if (marked.length >= PER_CARD) wins.push({ id: "blackout", kind: "blackout" });
+    return { cells, wins };
   }
 
   async function showGame(slug) {
@@ -131,27 +128,44 @@
 
     const card = el("div", { class: "card" });
     const cells = [];
-    let prevKinds = checkWins(state.marked).kinds;
+    let prevIds = new Set(checkWins(state.marked).wins.map((w) => w.id));
+    const winCount = el("span", { class: "win-count" });
 
     function refresh(fromTap) {
-      const { cells: winCells, kinds } = checkWins(state.marked);
+      const { cells: winCells, wins } = checkWins(state.marked);
       cells.forEach((c, i) => {
         if (i === FREE) return;
         c.classList.toggle("marked", state.marked.includes(i));
         c.classList.toggle("win", winCells.has(i));
         c.setAttribute("aria-pressed", state.marked.includes(i) ? "true" : "false");
       });
-      card.classList.toggle("bingo", kinds.size > 0);
-      card.classList.toggle("blackout", kinds.has("blackout"));
-      // Celebrate the best pattern that just appeared (blackout > corners > line).
-      const fresh = ["blackout", "corners", "line"].find((k) => kinds.has(k) && !prevKinds.has(k));
-      if (fromTap && fresh) {
-        banner.querySelector(".banner-title").textContent = WIN_TEXT[fresh][0];
-        banner.querySelector(".banner-sub").textContent = WIN_TEXT[fresh][1];
-        banner.hidden = false;
-        if (navigator.vibrate) navigator.vibrate(fresh === "blackout" ? [200, 80, 200, 80, 400] : [120, 60, 120]);
+      const total = wins.length;
+      card.classList.toggle("bingo", total > 0);
+      card.classList.toggle("blackout", wins.some((w) => w.kind === "blackout"));
+      winCount.textContent = total ? "🏆 " + total + (total === 1 ? " win" : " wins") : "";
+      // Pop up for every new win this tap created.
+      const fresh = wins.filter((w) => !prevIds.has(w.id));
+      if (fromTap && fresh.length) celebrate(fresh, total);
+      prevIds = new Set(wins.map((w) => w.id));
+    }
+
+    function celebrate(fresh, total) {
+      const kinds = fresh.map((w) => w.kind);
+      let title, sub;
+      if (kinds.includes("blackout")) {
+        title = "BLACKOUT! 🏆"; sub = "You covered the whole card!";
+      } else {
+        const lines = kinds.filter((k) => k === "line").length;
+        const parts = [];
+        if (lines) parts.push(lines === 1 ? "a new line" : lines + " new lines");
+        if (kinds.includes("corners")) parts.push("four corners");
+        title = (kinds.includes("corners") && !lines ? "FOUR CORNERS" : (MULTI[fresh.length] ?? fresh.length + "X ") + "BINGO") + "! 🎉";
+        sub = "You got " + parts.join(" and ") + ".";
       }
-      prevKinds = kinds;
+      banner.querySelector(".banner-title").textContent = title;
+      banner.querySelector(".banner-sub").textContent = sub + " That's " + total + (total === 1 ? " win" : " wins") + " on this card.";
+      banner.hidden = false;
+      if (navigator.vibrate) navigator.vibrate(kinds.includes("blackout") ? [200, 80, 200, 80, 400] : [120, 60, 120]);
     }
 
     const grid = el("div", { class: "grid" });
@@ -175,7 +189,7 @@
       grid.append(cell);
     }
     card.append(el("div", { class: "letters" }, ..."BINGO".split("").map((l) => el("span", null, l))), grid,
-      el("div", { class: "card-foot" }, el("span", null, game.title)));
+      el("div", { class: "card-foot" }, winCount, el("span", null, game.title)));
 
     const shareBtn = el("button", { type: "button", onclick: async () => {
       const url = location.href;

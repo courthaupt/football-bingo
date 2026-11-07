@@ -54,8 +54,8 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
    and a few sample squares.
 
 ## Winning
-Any row, column or diagonal, four corners, or blackout (all 24 squares). Each pattern gets its
-own pop-up the first time it's hit. If a change to card building should reset everyone's cards,
+Any row, column or diagonal, four corners, or blackout (all 24 squares). Every new win gets its own
+pop-up (each extra line counts), and the card shows a running win count. If a change to card building should reset everyone's cards,
 bump `CARD_VERSION` in `app.js`.
 
 ## Caching
