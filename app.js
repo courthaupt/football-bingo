@@ -104,7 +104,7 @@
     document.title = "How to play · Football Bingo";
     let game = null;
     if (slug && /^[a-z0-9-]+$/.test(slug) && slug !== "generic") { try { game = await getJSON("games/" + slug + ".json"); } catch (e) { /* default prizes */ } }
-    const prizes = getPrizes(game), paid = hasPrizes(prizes);
+    const prizes = getPrizes(game), paid = hasPrizes(prizes), movie = !!(game && game.kind === "movie");
     if (game && game.teamPicker) { const t = store.get("fbbingo:team:" + slug); if (game[t] && game[t].theme) applyTheme(game[t].theme); }
     const f = prizes.firstBingo, e = prizes.extraBingo, x = prizes.blackout, kind = prizes.payWith || "ticket";
     const li = (...kids) => el("li", null, ...kids);
@@ -116,10 +116,11 @@
         el("h2", null, "How to play"),
         el("ul", null,
           li("Everyone gets their own random card. ", strong("One card per person.")),
-          li("Don't tap ", strong("New card"), " after kickoff."),
-          li("Tap a square when it happens in the game or on the broadcast. That includes halftime and commercials."),
+          li("Don't tap ", strong("New card"), movie ? " after the movie starts." : " after kickoff."),
+          movie ? li("Tap a square when it happens in the movie, or in the room for the watch-party squares.")
+                : li("Tap a square when it happens in the game or on the broadcast. That includes halftime and commercials."),
           li("Only mark what you actually see or hear. The free space in the middle counts for everyone."),
-          li("Squares count from kickoff to the final whistle.")),
+          li(movie ? "Squares count from the opening scene to the end credits." : "Squares count from kickoff to the final whistle.")),
         el("h2", null, "How to win"),
         el("ul", null,
           li(strong("Bingo:"), " any row, column or diagonal of 5. The free space counts."),
@@ -169,7 +170,7 @@
   function buildSquares(game, generic) {
     const specific = shuffle(uniq(game.squares));
     const gen = shuffle(uniq(generic).filter((s) => !specific.includes(s)));
-    const n = Math.min(specific.length, game.specificPerCard ?? Math.round(PER_CARD * SPECIFIC_SHARE));
+    const n = Math.min(specific.length, game.specificPerCard ?? (game.generic === "none" ? PER_CARD : Math.round(PER_CARD * SPECIFIC_SHARE)));
     let picks = specific.slice(0, n).concat(gen.slice(0, PER_CARD - n));
     if (picks.length < PER_CARD) picks = picks.concat(specific.slice(n, n + PER_CARD - picks.length));
     return shuffle(picks).slice(0, PER_CARD);
@@ -195,8 +196,9 @@
   async function showGame(slug) {
     if (slug !== "generic" && !/^[a-z0-9-]+$/.test(slug)) throw new Error("Unknown game");
     const game = slug === "generic" ? { title: "Any game", squares: [] } : await getJSON("games/" + slug + ".json");
+    // "generic": "none" (e.g. a movie) uses only the game's own squares.
     const genericFile = game.generic === "college" ? "data/generic-college.json" : "data/generic.json";
-    const generic = await getJSON(genericFile);
+    const generic = game.generic === "none" ? [] : await getJSON(genericFile);
     const prizes = getPrizes(game);
     const key = "fbbingo:" + CARD_VERSION + ":" + slug;
     let state = store.get(key);
@@ -205,7 +207,7 @@
       store.set(key, state);
     }
     const save = () => store.set(key, state);
-    document.title = game.title + " · Football Bingo";
+    document.title = game.title + " Bingo";
 
     const away = game.away || {}, home = game.home || {};
     if (away.color) document.documentElement.style.setProperty("--away", away.color);
@@ -292,7 +294,7 @@
     for (let i = 0; i < SIZE * SIZE; i++) {
       let cell;
       if (i === FREE) {
-        cell = el("div", { class: "cell free" }, "FREE 🏈");
+        cell = el("div", { class: "cell free" }, game.free || "FREE 🏈");
       } else {
         const idx = i;
         const text = state.squares[sq++];

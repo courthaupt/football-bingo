@@ -41,7 +41,10 @@ for (const g of index) {
   const game = read(file);
   if (!game) continue;
   if (game.title !== g.title || game.date !== g.date) fail(file + ": title/date don't match games/index.json");
-  for (const side of ["away", "home"]) {
+  // Movies (and other non-sports games) have no teams.
+  const teamless = game.kind === "movie";
+  if (game.kind && game.kind !== "movie") fail(file + ': kind must be "movie" if set');
+  for (const side of teamless ? [] : ["away", "home"]) {
     const t = game[side];
     if (!t || !t.name || !t.short) fail(file + ": " + side + " needs name and short");
     else if (t.color && !/^#[0-9a-fA-F]{6}$/.test(t.color)) fail(file + ": " + side + ".color must be #rrggbb");
@@ -60,11 +63,11 @@ for (const g of index) {
     }
   }
   if (game.teamPicker && !(game.away && game.away.theme && game.home && game.home.theme)) fail(file + ": teamPicker needs away.theme and home.theme");
-  {
-  }
-  checkSquares(file, game.squares, 20);
-  if (game.generic && !["nfl", "college"].includes(game.generic)) fail(file + ': generic must be "nfl" or "college"');
-  const pool = game.generic === "college" ? college : generic;
+  // With no generic squares, every card needs 24 of the game's own (more makes cards differ).
+  checkSquares(file, game.squares, game.generic === "none" ? 36 : 20);
+  if (game.generic && !["nfl", "college", "none"].includes(game.generic)) fail(file + ': generic must be "nfl", "college" or "none"');
+  if (game.free && (typeof game.free !== "string" || game.free.length > 12)) fail(file + ": free must be a short label (12 characters or fewer)");
+  const pool = game.generic === "college" ? college : game.generic === "none" ? [] : generic;
   for (const s of game.squares || []) if ((pool || []).some((p) => p.toLowerCase() === String(s).toLowerCase())) fail(file + ": repeats a generic square: " + s);
 }
 for (const f of fs.readdirSync(path.join(root, "games"))) {

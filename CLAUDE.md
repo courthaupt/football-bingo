@@ -58,6 +58,13 @@ When the user names a game ("make bingo for Chiefs at Bills Sunday"):
 7. Give the user the share link: `https://courthaupt.github.io/football-bingo/?game=<slug>`
    and a few sample squares.
 
+## Movie nights and other non-football games
+Set `"kind": "movie"` (no `away`/`home` teams needed), `"generic": "none"` so every square comes
+from the game file, and optionally `"free": "FREE 🧅"` for the center label. Write 40–50 squares
+(at least 36) so cards differ. Mix in watch-party squares ("Someone quotes along") so the
+result isn't decided by the movie alone. The rules page switches to movie wording. Example:
+`games/2026-11-08-shrek.json`.
+
 ## Winning
 Any row, column or diagonal, four corners, or blackout (all 24 squares). Every new win gets its own
 pop-up (each extra line counts), and the card shows a running win count. If a change to card building should reset everyone's cards,
